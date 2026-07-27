@@ -1,0 +1,12 @@
+pluginManagement {
+    repositories {
+        maven { url "https://plugins.gradle.org/m2/" }
+        maven { url 'https://repo1.maven.org/maven2/' }
+        maven { url 'https://maven.dremio.com/free/' }
+        gradlePluginPortal()
+    }
+}
+
+rootProject.name = 'fluffy-doodle'
+
+include 'pubsub'
