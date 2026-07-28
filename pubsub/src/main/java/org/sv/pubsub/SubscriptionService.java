@@ -4,7 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class SubscriptionService implements AutoCloseable{
-    Map<String,Topic> topics = new HashMap<>();
+    final Map<String,Topic> topics = new HashMap<>();
+    boolean closed = false;
 
     public boolean subscribe(String topicName, Subscriber subscriber) {
         Topic topic = topics.get(topicName);
@@ -25,19 +26,27 @@ public class SubscriptionService implements AutoCloseable{
         return true;
     }
     public boolean addTopic(String topicName){
-        Topic topic = topics.get(topicName);
-        if (topic != null)
+        if (topics.containsKey(topicName))
             return false;
-        topics.put(topicName, new Topic(topicName));
+        synchronized(topics) {
+            if(closed)
+                return false;
+            Topic topic = topics.get(topicName);
+            if (topic != null)
+                return false;
+            topics.put(topicName, new Topic(topicName));
+        }
         return true;
     }
 
-
     @Override
     public void close() throws Exception {
-        for (Topic t : topics.values()){
-            if (t != null)
-                t.close();
+        synchronized(topics) {
+            for (Topic t : topics.values()) {
+                if (t != null)
+                    t.close();
+            }
+            closed = true;
         }
     }
 }
