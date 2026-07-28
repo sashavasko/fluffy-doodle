@@ -45,7 +45,10 @@ class SubscriptionServiceTest {
         @Override
         public void onMessage(String message) {
             super.onMessage(message);
-            while(true);
+            try {
+                Thread.sleep(100_000);
+            } catch (InterruptedException ignore) {
+            }
         }
     }
 
@@ -77,10 +80,14 @@ class SubscriptionServiceTest {
 
             assertFalse(service.publish("foo", "message1"));
             assertFalse(service.publish("foo", "message2"));
+            assertFalse(service.publish("foo", "message3"));
+            assertFalse(service.publish("foo", "message4"));
+            assertFalse(service.publish("foo", "message5"));
+            assertFalse(service.publish("foo", "message6"));
         }
 
-        assertEquals(2, test1.getMessagesReceived().size());
-        assertEquals(2, test2.getMessagesReceived().size());
+        assertEquals(6, test1.getMessagesReceived().size());
+        assertEquals(6, test2.getMessagesReceived().size());
     }
 
 }
