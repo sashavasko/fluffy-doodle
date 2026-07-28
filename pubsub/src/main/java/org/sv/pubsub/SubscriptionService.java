@@ -7,7 +7,7 @@ public class SubscriptionService implements AutoCloseable{
     final Map<String,Topic> topics = new HashMap<>();
     boolean closed = false;
 
-    public Topic getTopic(String topicName){
+    protected Topic getTopic(String topicName){
         synchronized(topics) {
             return closed ? null : topics.get(topicName);
         }
