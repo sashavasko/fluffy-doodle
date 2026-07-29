@@ -1,14 +1,13 @@
 package org.sv.pubsub;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.*;
 
 public class Topic implements AutoCloseable {
     String name;
     Set<Subscriber> subscribed = new CopyOnWriteArraySet<>();
     ExecutorService executor;
+    final List<String> previousMessages = new LinkedList<>();
 
     public Topic(String name) {
         this.name = name;
@@ -16,16 +15,25 @@ public class Topic implements AutoCloseable {
     }
 
     public boolean subscribe(Subscriber subscriber){
-        return subscribed.add(subscriber);
+        if (subscriber != null && subscribed.add(subscriber)){
+            List<DeliveryTask> tasks = new ArrayList<>();
+            List<String> pendingMessages;
+            synchronized(previousMessages){
+                pendingMessages = previousMessages.reversed();
+            }
+            for (String message : pendingMessages){
+                tasks.add(new DeliveryTask(message, subscriber));
+            }
+            return runTasks(tasks);
+        }
+        return false;
     }
 
     public boolean unsubscribe(Subscriber subscriber){
         return subscribed.remove(subscriber);
     }
 
-    public boolean publish(String message) {
-        List<DeliveryTask> tasks = new ArrayList<>();
-        subscribed.forEach(s -> tasks.add(new DeliveryTask(message, s)));
+    public boolean runTasks(List<DeliveryTask> tasks){
         try {
             List<Future<Subscriber>> futures = executor.invokeAll(tasks, 5, TimeUnit.SECONDS);
             for (Future<Subscriber> f : futures) {
@@ -38,6 +46,15 @@ public class Topic implements AutoCloseable {
             return false;
         }
         return true;
+    }
+
+    public boolean publish(String message) {
+        List<DeliveryTask> tasks = new ArrayList<>();
+        subscribed.forEach(s -> tasks.add(new DeliveryTask(message, s)));
+        synchronized(previousMessages){
+            previousMessages.addFirst(message);
+        }
+        return runTasks(tasks);
     }
 
     @Override
