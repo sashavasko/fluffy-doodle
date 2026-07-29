@@ -15,9 +15,9 @@ public class Topic implements AutoCloseable {
     }
 
     public boolean subscribe(Subscriber subscriber){
-        if (subscriber != null && !subscribed.contains(subscriber)){
-            List<DeliveryTask> tasks = new ArrayList<>();
-            synchronized(previousMessages){
+        synchronized(previousMessages) {
+            if (subscriber != null && !subscribed.contains(subscriber)) {
+                List<DeliveryTask> tasks = new ArrayList<>();
                 Iterator<String> reverseIt = previousMessages.descendingIterator();
                 while (reverseIt.hasNext()) {
                     String message = reverseIt.next();
