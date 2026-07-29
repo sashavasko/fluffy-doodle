@@ -7,7 +7,7 @@ public class Topic implements AutoCloseable {
     String name;
     Set<Subscriber> subscribed = new CopyOnWriteArraySet<>();
     ExecutorService executor;
-    final List<String> previousMessages = new LinkedList<>();
+    final LinkedList<String> previousMessages = new LinkedList<>();
 
     public Topic(String name) {
         this.name = name;
@@ -17,14 +17,15 @@ public class Topic implements AutoCloseable {
     public boolean subscribe(Subscriber subscriber){
         if (subscriber != null && subscribed.add(subscriber)){
             List<DeliveryTask> tasks = new ArrayList<>();
-            List<String> pendingMessages;
             synchronized(previousMessages){
-                pendingMessages = previousMessages.reversed();
+                Iterator<String> reverseIt = previousMessages.descendingIterator();
+                while (reverseIt.hasNext()) {
+                    String message = reverseIt.next();
+                    tasks.add(new DeliveryTask(message, subscriber));
+                }
+                if (runTasks(tasks))
+                    return subscribed.add(subscriber);
             }
-            for (String message : pendingMessages){
-                tasks.add(new DeliveryTask(message, subscriber));
-            }
-            return runTasks(tasks);
         }
         return false;
     }
